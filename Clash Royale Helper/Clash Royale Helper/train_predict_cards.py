@@ -1,21 +1,19 @@
+import argparse
 import numpy as np
 
 # Training the data
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from LeNetClass import LeNet
 # Used for aug data gen
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # Used for training
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 # Used for predictions
-from keras.models import load_model
 
 # Used for live predictions
 import time
@@ -27,8 +25,13 @@ from PIL import ImageTk
 from PIL import Image
 
 # Use other files
-from load_train_test_1 import loadTrainingImages1 
-from load_train_test_1 import loadTestingImages1 
+from load_train_test_1 import loadTrainingImages1
+from load_train_test_1 import loadTestingImages1
+
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+
 
 def trainModel1():
     EPOCHS = 150
@@ -55,40 +58,41 @@ def trainModel1():
 
     print("[INFO] compiling model...")
     model = LeNet.build(width=32, height=32, depth=3, classes=96)
-    opt = Adam(lr=INIT_LR, decay=INIT_LR/EPOCHS)
-    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
+    opt = Adam(learning_rate=INIT_LR)
+    model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 
     print("[INFO] training network...")
-    H = model.fit_generator(aug.flow(x_train, y_train, batch_size=BS), 
-                            validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
-                            epochs=EPOCHS, verbose=1)
+    H = model.fit(aug.flow(x_train, y_train, batch_size=BS),
+                  validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
+                  epochs=EPOCHS, verbose=1)
 
     print("[INFO] serializing network...")
-    model.save("testNet.model")
+    model.save_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
 
 def modelPredicts1():
-
+    """Run inference on the eight cropped card slots in ``testData``."""
     loadTestingImages1()
 
-    imageNames = sorted(list(paths.list_images("trainData/")))
-
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    test_dir = os.path.join(BASE_DIR, "testData")
+    imageNames = sorted(list(paths.list_images(train_dir)))
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/')+1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     print("[INFO] loading network...")
-    model = load_model("testNet.model")
+    model = LeNet.build(width=32, height=32, depth=3, classes=96)
+    model.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
     for i in range(8):
-        img = cv2.imread("testData/output" + str(i+1) + ".png")
+        img = cv2.imread(os.path.join(test_dir, f"output{i+1}.png"))
         orig = img.copy()
 
         img = cv2.resize(img, (32, 32))
-        img = img.astype("float")/255.0
+        img = img.astype("float") / 255.0
         img = img_to_array(img)
         img = np.expand_dims(img, axis=0)
-
 
         output = model.predict(img)[0]
         label = output.argmax()
@@ -97,7 +101,6 @@ def modelPredicts1():
         print(label)
 
         label = "{}: {:.2f}%".format(imageNames[label], output[label] * 100)
-
         print(label)
 
         orig = cv2.resize(orig, (400, 400))
@@ -109,14 +112,16 @@ def modelPredicts1():
 
 def liveModelPredicts1():
 
-    imagePaths = sorted(list(paths.list_images("trainData/")))
-    imageNames = sorted(list(paths.list_images("trainData/")))
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    imagePaths = sorted(list(paths.list_images(train_dir)))
+    imageNames = sorted(list(paths.list_images(train_dir)))
 
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/')+1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     print("[INFO] loading network...")
-    model = load_model("testNet.model")
+    model = LeNet.build(width=32, height=32, depth=3, classes=96)
+    model.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
     opponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
     tempOpponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
@@ -135,7 +140,7 @@ def liveModelPredicts1():
         if (time.time()-startTime > 1):
 
             im = ImageGrab.grab()
-            im.save("testCNN.png")
+            im.save(os.path.join(BASE_DIR, "testCNN.png"))
             loadTestingImages1()
 
             for i in range(8):
@@ -143,7 +148,7 @@ def liveModelPredicts1():
                 if (opponentCards[i] != "MysteryCard"):
                     continue
 
-                img = cv2.imread("testData/output" + str(i+1) + ".png")
+                img = cv2.imread(os.path.join(BASE_DIR, "testData", f"output{i+1}.png"))
                 img = cv2.resize(img, (32, 32))
                 img = img.astype("float")/255.0
                 img = img_to_array(img)
@@ -159,7 +164,7 @@ def liveModelPredicts1():
                     opponentCards[i] = imageNames[label]
 
                     img = Image.open(imagePaths[label])
-                    img.thumbnail((128, 128), Image.ANTIALIAS)
+                    img.thumbnail((128, 128), Image.LANCZOS)
                     img = ImageTk.PhotoImage(img)
                     panel = tkinter.Label(myFrame, image = img, borderwidth=10)
                     panel.image = img
@@ -180,7 +185,24 @@ def liveModelPredicts1():
 
             startTime = time.time()
 
+def main():
+    parser = argparse.ArgumentParser(description="Train or run the card classifier")
+    parser.add_argument(
+        "--mode",
+        choices=["train", "predict", "live"],
+        default="train",
+        help="Operation to perform",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "train":
+        trainModel1()
+    elif args.mode == "predict":
+        modelPredicts1()
+    else:
+        liveModelPredicts1()
+
+
 # --- CNN 1 ---
-#trainModel1()
-modelPredicts1()
-#liveModelPredicts1()
+if __name__ == "__main__":
+    main()
