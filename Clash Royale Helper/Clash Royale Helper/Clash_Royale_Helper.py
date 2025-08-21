@@ -1,7 +1,8 @@
+import os
 import numpy as np
 
 # Used for predictions
-from tensorflow.keras.models import load_model
+from LeNetClass import LeNet
 
 # Used for live predictions
 import time
@@ -20,20 +21,25 @@ from imutils import paths
 from load_train_test_1 import loadTestingImages1
 from load_train_test_2 import loadTestingImages2
 
+BASE_DIR = os.path.dirname(__file__)
+
 
 def liveBothModelPredicts():
 
-    imagePaths = sorted(list(paths.list_images("trainData/")))
-    imageNames = sorted(list(paths.list_images("trainData/")))
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    imagePaths = sorted(list(paths.list_images(train_dir)))
+    imageNames = sorted(list(paths.list_images(train_dir)))
 
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/')+1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     cardCollection = loadCardCollection()
 
     print("[INFO] loading both networks...")
-    model1 = load_model("testNet.model")
-    model2 = load_model("testNet2.model")
+    model1 = LeNet.build(width=32, height=32, depth=3, classes=96)
+    model1.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
+    model2 = LeNet.build(width=28, height=28, depth=3, classes=2)
+    model2.load_weights(os.path.join(BASE_DIR, "testNet2.h5"))
 
     opponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
     tempOpponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
@@ -67,7 +73,7 @@ def liveBothModelPredicts():
     root.update()
 
     for i in range(4):
-        img = Image.open("trainData/MysteryCard.png")
+        img = Image.open(os.path.join(train_dir, "MysteryCard.png"))
         img.thumbnail((128, 128), Image.ANTIALIAS)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame, image = img, borderwidth=10, bg='green')
@@ -76,7 +82,7 @@ def liveBothModelPredicts():
         root.update()
 
     for i in range(4):
-        img = Image.open("trainData/MysteryCard.png")
+        img = Image.open(os.path.join(train_dir, "MysteryCard.png"))
         img.thumbnail((128, 128), Image.ANTIALIAS)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame2, image = img, borderwidth=10, bg='orange')
@@ -113,7 +119,7 @@ def liveBothModelPredicts():
             root.update()
 
             im = ImageGrab.grab()
-            im.save("testCNN.png")
+            im.save(os.path.join(BASE_DIR, "testCNN.png"))
             loadTestingImages1()
             loadTestingImages2()
 
@@ -122,7 +128,7 @@ def liveBothModelPredicts():
                 if (opponentCards[i] != "MysteryCard"):
                     continue
 
-                img = cv2.imread("testData/output" + str(i+1) + ".png")
+                img = cv2.imread(os.path.join(BASE_DIR, "testData", f"output{i+1}.png"))
                 img = cv2.resize(img, (32, 32))
                 img = img.astype("float")/255.0
                 img = img_to_array(img)
@@ -180,7 +186,7 @@ def liveBothModelPredicts():
             tempPending = []
 
             for i in range(8):
-                img = cv2.imread("testData2/output" + str(i+1) + ".png")
+                img = cv2.imread(os.path.join(BASE_DIR, "testData2", f"output{i+1}.png"))
                 img = cv2.resize(img, (28, 28))
                 img = img.astype("float")/255.0
                 img = img_to_array(img)
@@ -208,7 +214,7 @@ def liveBothModelPredicts():
                 print(labelString)
 
             for i in range(4):
-                img = Image.open("trainData/" + opponentHand[i] + ".png")
+                img = Image.open(os.path.join(train_dir, opponentHand[i] + ".png"))
                 img.thumbnail((128, 128), Image.ANTIALIAS)
                 img = ImageTk.PhotoImage(img)
                 panel = tkinter.Label(myFrame, image = img, borderwidth=10, bg='green')
@@ -217,7 +223,7 @@ def liveBothModelPredicts():
                 root.update()
 
             for i in range(4):
-                img = Image.open("trainData/" + opponentHand[i+4] + ".png")
+                img = Image.open(os.path.join(train_dir, opponentHand[i+4] + ".png"))
                 img.thumbnail((128, 128), Image.ANTIALIAS)
                 img = ImageTk.PhotoImage(img)
                 panel = tkinter.Label(myFrame2, image = img, borderwidth=10, bg='orange')
@@ -236,10 +242,11 @@ def liveBothModelPredicts():
 
 
 def createCardCollection():
-    imageNames = sorted(list(paths.list_images("trainData/")))
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    imageNames = sorted(list(paths.list_images(train_dir)))
 
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/')+1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     cardCollection = dict()
 
@@ -247,16 +254,16 @@ def createCardCollection():
         print(x)
         cardCollection[x] = int(input())
 
-    with open('cardCollection.txt', 'w') as f:
+    with open(os.path.join(BASE_DIR, 'cardCollection.txt'), 'w') as f:
         for key, value in cardCollection.items():
             f.write('%s:%s\n' % (key, value))
 
 def loadCardCollection():
     data = dict()
-    with open('cardCollection.txt') as raw_data:
+    with open(os.path.join(BASE_DIR, 'cardCollection.txt')) as raw_data:
         for item in raw_data:
-            key,value = item.split(':', 1)
-            data[key]=int(value[0:value.find('/')])
+            key, value = item.split(':', 1)
+            data[key] = int(value.strip())
 
     return data
 
@@ -266,6 +273,7 @@ def loadCardCollection():
 #print(loadCardCollection())
 
 def testingGUI():
+    train_dir = os.path.join(BASE_DIR, "trainData")
 
     root = tkinter.Tk()
 
@@ -274,7 +282,7 @@ def testingGUI():
 
     for r in range(1):
         for c in range(4):
-            img = Image.open("trainData/GoblinHutCard.png")
+            img = Image.open(os.path.join(train_dir, "GoblinHutCard.png"))
             img.thumbnail((128, 128), Image.ANTIALIAS)
             img = ImageTk.PhotoImage(img)
             panel = tkinter.Label(myFrame, image = img, borderwidth=10)
@@ -286,7 +294,7 @@ def testingGUI():
 
     while(True):
         if(time.time() - st > 1):
-            img = Image.open("trainData/TheLogCard.png")
+            img = Image.open(os.path.join(train_dir, "TheLogCard.png"))
             img.thumbnail((128, 128), Image.ANTIALIAS)
             img = ImageTk.PhotoImage(img)
             panel = tkinter.Label(myFrame, image = img, borderwidth=10)
@@ -295,3 +303,6 @@ def testingGUI():
             root.update()
 
             st = time.time()
+
+if __name__ == "__main__":
+    liveBothModelPredicts()

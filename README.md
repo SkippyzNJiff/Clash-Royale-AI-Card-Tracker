@@ -10,6 +10,47 @@ Libraries Used:
 - TkInter (GUI)
 - Pillow (mapping images into GUI)
 
+## Usage
+
+### Installation
+
+Install the required libraries (TensorFlow, OpenCV, Pillow, etc.) with:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Training and testing
+
+The two training scripts now expose a small command-line interface. By default
+they run the training routine; supply `--mode` to switch behaviour:
+
+```bash
+# Train the card classifier and save weights to testNet.h5
+python "Clash Royale Helper/Clash Royale Helper/train_predict_cards.py" --mode train
+
+# Split a captured screenshot into test crops and run inference
+python "Clash Royale Helper/Clash Royale Helper/train_predict_cards.py" --mode predict
+
+# Train the elixir/hand classifier
+python "Clash Royale Helper/Clash Royale Helper/train_predict_elixer.py" --mode train
+
+# Run live tracking of the elixir model
+python "Clash Royale Helper/Clash Royale Helper/train_predict_elixer.py" --mode live
+```
+
+### Full helper
+
+After training (or using the provided `testNet.h5` and `testNet2.h5` weights),
+launch the real-time tracker:
+
+```bash
+python "Clash Royale Helper/Clash Royale Helper/Clash_Royale_Helper.py"
+```
+
+Scripts resolve asset paths relative to their own directory, so you can invoke
+them from the project root as shown above.
+
 If you still want to see the code for the following:
 
 1. The Convolutional Neural Network Architecture (LeNet).
