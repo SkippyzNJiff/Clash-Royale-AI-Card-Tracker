@@ -1,7 +1,8 @@
+import os
 import numpy as np
 
 # Used for predictions
-from keras.models import load_model
+from LeNetClass import LeNet
 
 # Used for live predictions
 import time
@@ -14,9 +15,7 @@ from PIL import Image
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 
 from load_train_test_1 import loadTestingImages1
@@ -34,8 +33,10 @@ def liveBothModelPredicts():
     cardCollection = loadCardCollection()
 
     print("[INFO] loading both networks...")
-    model1 = load_model("testNet.model")
-    model2 = load_model("testNet2.model")
+    model1 = LeNet.build(width=32, height=32, depth=3, classes=96)
+    model1.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
+    model2 = LeNet.build(width=28, height=28, depth=3, classes=2)
+    model2.load_weights(os.path.join(BASE_DIR, "testNet2.h5"))
 
     opponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
     tempOpponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
@@ -237,6 +238,9 @@ def liveBothModelPredicts():
             print()
 
 
+BASE_DIR = os.path.dirname(__file__)
+
+
 def createCardCollection():
     imageNames = sorted(list(paths.list_images("trainData/")))
 
@@ -249,13 +253,13 @@ def createCardCollection():
         print(x)
         cardCollection[x] = int(input())
 
-    with open('cardCollection.txt', 'w') as f:
+    with open(os.path.join(BASE_DIR, 'cardCollection.txt'), 'w') as f:
         for key, value in cardCollection.items():
             f.write('%s:%s\n' % (key, value))
 
 def loadCardCollection():
     data = dict()
-    with open('cardCollection.txt') as raw_data:
+    with open(os.path.join(BASE_DIR, 'cardCollection.txt')) as raw_data:
         for item in raw_data:
             key,value = item.split(':', 1)
             data[key]=int(value[0:value.find('/')])
@@ -297,3 +301,6 @@ def testingGUI():
             root.update()
 
             st = time.time()
+
+if __name__ == "__main__":
+    liveBothModelPredicts()
