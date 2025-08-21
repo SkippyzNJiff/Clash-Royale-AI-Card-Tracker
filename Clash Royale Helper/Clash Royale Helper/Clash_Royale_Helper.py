@@ -1,7 +1,7 @@
 import numpy as np
 
 # Used for predictions
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 # Used for live predictions
 import time
@@ -14,9 +14,7 @@ from PIL import Image
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 
 from load_train_test_1 import loadTestingImages1

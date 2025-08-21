@@ -1,21 +1,19 @@
 import numpy as np
 
 # Training the data
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from LeNetClass import LeNet
 # Used for aug data gen
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # Used for training
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 # Used for predictions
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 # Used for live predictions
 import time
@@ -48,14 +46,14 @@ def trainModel2():
 
     print("[INFO] compiling model...")
     model = LeNet.build(width=28, height=28, depth=3, classes=2)
-    opt = Adam(lr=INIT_LR, decay=INIT_LR/EPOCHS)
-    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
+    opt = Adam(learning_rate=INIT_LR)
+    model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 
     print("[INFO] training network...")
-    H = model.fit_generator(aug.flow(x_train, y_train, batch_size=BS), 
-                            validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
-                            epochs=EPOCHS, verbose=1)
+    H = model.fit(aug.flow(x_train, y_train, batch_size=BS),
+                  validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
+                  epochs=EPOCHS, verbose=1)
 
     print("[INFO] serializing network...")
     model.save("testNet2.model")
@@ -145,8 +143,10 @@ def liveModelPredicts2():
             startTime = time.time()
 
 # --- CNN 2 ---
-generateTrainingImages2()
-labelTrainingData2()
-trainModel2()
-modelPredicts2()
-liveModelPredicts2()
+if __name__ == "__main__":
+    # Example usage
+    # generateTrainingImages2()
+    # labelTrainingData2()
+    # trainModel2()
+    modelPredicts2()
+    # liveModelPredicts2()
