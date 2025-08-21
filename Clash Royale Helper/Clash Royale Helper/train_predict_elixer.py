@@ -1,21 +1,20 @@
 import numpy as np
 
+import argparse
+
 # Training the data
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from LeNetClass import LeNet
 # Used for aug data gen
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # Used for training
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 # Used for predictions
-from keras.models import load_model
 
 # Used for live predictions
 import time
@@ -27,7 +26,12 @@ from PIL import ImageTk
 from PIL import Image
 
 # Use other files
-from load_train_test_2 import loadTrainingImages2, loadTestingImages2, generateTrainingImages2, labelTrainingData2
+from load_train_test_2 import (
+    loadTrainingImages2,
+    loadTestingImages2,
+    generateTrainingImages2,
+    labelTrainingData2,
+)
 
 def trainModel2():
     EPOCHS = 150
@@ -48,47 +52,46 @@ def trainModel2():
 
     print("[INFO] compiling model...")
     model = LeNet.build(width=28, height=28, depth=3, classes=2)
-    opt = Adam(lr=INIT_LR, decay=INIT_LR/EPOCHS)
-    model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
+    opt = Adam(learning_rate=INIT_LR)
+    model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 
     print("[INFO] training network...")
-    H = model.fit_generator(aug.flow(x_train, y_train, batch_size=BS), 
-                            validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
-                            epochs=EPOCHS, verbose=1)
+    H = model.fit(aug.flow(x_train, y_train, batch_size=BS),
+                  validation_data=(x_train, y_train), steps_per_epoch=len(x_train) // BS,
+                  epochs=EPOCHS, verbose=1)
 
     print("[INFO] serializing network...")
-    model.save("testNet2.model")
+    model.save_weights("testNet2.h5")
 
 def modelPredicts2():
-
+    """Run inference on the eight cropped elixir/card slots in ``testData2``."""
     loadTestingImages2()
 
     print("[INFO] loading network...")
-    model = load_model("testNet2.model")
+    model = LeNet.build(width=28, height=28, depth=3, classes=2)
+    model.load_weights("testNet2.h5")
 
     for i in range(8):
-        img = cv2.imread("testData2/output" + str(i+1) + ".png")
+        img = cv2.imread(f"testData2/output{i+1}.png")
         orig = img.copy()
 
         img = cv2.resize(img, (28, 28))
-        img = img.astype("float")/255.0
+        img = img.astype("float") / 255.0
         img = img_to_array(img)
         img = np.expand_dims(img, axis=0)
-
 
         output = model.predict(img)[0]
         label = output.argmax()
         msg = "Not Placed"
 
-        if (label == 1):
+        if label == 1:
             msg = "Placed"
 
         print(output)
         print(label)
 
         label = "Card " + str(i) + " - {}: {:.2f}%".format(msg, output[label] * 100)
-
         print(label)
 
         orig = cv2.resize(orig, (400, 400))
@@ -100,7 +103,8 @@ def modelPredicts2():
 def liveModelPredicts2():
 
     print("[INFO] loading network...")
-    model = load_model("testNet2.model")
+    model = LeNet.build(width=28, height=28, depth=3, classes=2)
+    model.load_weights("testNet2.h5")
 
     opponentHand = ['Card 1', 'Card 2', 'Card 3', 'Card 4', 'Card 5', 'Card 6', 'Card 7', 'Card 8']
 
@@ -144,9 +148,24 @@ def liveModelPredicts2():
 
             startTime = time.time()
 
+def main():
+    parser = argparse.ArgumentParser(description="Train or run the elixir classifier")
+    parser.add_argument(
+        "--mode",
+        choices=["train", "predict", "live"],
+        default="train",
+        help="Operation to perform",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "train":
+        trainModel2()
+    elif args.mode == "predict":
+        modelPredicts2()
+    else:
+        liveModelPredicts2()
+
+
 # --- CNN 2 ---
-generateTrainingImages2()
-labelTrainingData2()
-trainModel2()
-modelPredicts2()
-liveModelPredicts2()
+if __name__ == "__main__":
+    main()

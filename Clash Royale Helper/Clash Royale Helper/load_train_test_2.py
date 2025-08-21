@@ -2,9 +2,7 @@ import numpy as np
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 
 from random import randint
@@ -177,6 +175,16 @@ def loadTrainingImages2():
     return x_train, y_train
 
 def loadTestingImages2():
+    """Split ``testCNN.png`` into eight 28×28 elixir/card slots.
+
+    Raises a ``FileNotFoundError`` if the screenshot does not exist.
+    """
+
+    if not os.path.exists("testCNN.png"):
+        raise FileNotFoundError(
+            "testCNN.png not found. Capture the screen before calling "
+            "loadTestingImages2()."
+        )
 
     img = cv2.imread("testCNN.png")
     arr = img_to_array(img)
@@ -185,17 +193,10 @@ def loadTestingImages2():
     arr = arr[88:118, 702:1215]
 
     cv2.imwrite("testData2/output1.png", arr[0:30, 50:104])
-
     cv2.imwrite("testData2/output2.png", arr[0:30, 109:163])
-
     cv2.imwrite("testData2/output3.png", arr[0:30, 168:222])
-
     cv2.imwrite("testData2/output4.png", arr[0:30, 227:281])
-
     cv2.imwrite("testData2/output5.png", arr[0:30, 286:340])
-
     cv2.imwrite("testData2/output6.png", arr[0:30, 345:399])
-
     cv2.imwrite("testData2/output7.png", arr[0:30, 404:459])
-
     cv2.imwrite("testData2/output8.png", arr[0:30, 464:518])
