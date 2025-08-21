@@ -12,6 +12,14 @@ Libraries Used:
 
 ## Usage
 
+### Installation
+
+Install the required libraries (TensorFlow, OpenCV, Pillow, etc.) with:
+
+```bash
+pip install -r requirements.txt
+```
+
 ### Training and testing
 
 The two training scripts now expose a small command-line interface. By default
@@ -39,6 +47,9 @@ launch the real-time tracker:
 ```bash
 python "Clash Royale Helper/Clash Royale Helper/Clash_Royale_Helper.py"
 ```
+
+Scripts resolve asset paths relative to their own directory, so you can invoke
+them from the project root as shown above.
 
 If you still want to see the code for the following:
 

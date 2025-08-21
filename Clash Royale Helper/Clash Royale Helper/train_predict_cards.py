@@ -28,6 +28,10 @@ from PIL import Image
 from load_train_test_1 import loadTrainingImages1
 from load_train_test_1 import loadTestingImages1
 
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+
 
 def trainModel1():
     EPOCHS = 150
@@ -64,23 +68,25 @@ def trainModel1():
                   epochs=EPOCHS, verbose=1)
 
     print("[INFO] serializing network...")
-    model.save_weights("testNet.h5")
+    model.save_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
 
 def modelPredicts1():
     """Run inference on the eight cropped card slots in ``testData``."""
     loadTestingImages1()
 
-    imageNames = sorted(list(paths.list_images("trainData/")))
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    test_dir = os.path.join(BASE_DIR, "testData")
+    imageNames = sorted(list(paths.list_images(train_dir)))
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/') + 1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     print("[INFO] loading network...")
     model = LeNet.build(width=32, height=32, depth=3, classes=96)
-    model.load_weights("testNet.h5")
+    model.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
     for i in range(8):
-        img = cv2.imread(f"testData/output{i+1}.png")
+        img = cv2.imread(os.path.join(test_dir, f"output{i+1}.png"))
         orig = img.copy()
 
         img = cv2.resize(img, (32, 32))
@@ -106,15 +112,16 @@ def modelPredicts1():
 
 def liveModelPredicts1():
 
-    imagePaths = sorted(list(paths.list_images("trainData/")))
-    imageNames = sorted(list(paths.list_images("trainData/")))
+    train_dir = os.path.join(BASE_DIR, "trainData")
+    imagePaths = sorted(list(paths.list_images(train_dir)))
+    imageNames = sorted(list(paths.list_images(train_dir)))
 
     for i in range(len(imageNames)):
-        imageNames[i] = imageNames[i][imageNames[i].find('/')+1:-4]
+        imageNames[i] = os.path.splitext(os.path.basename(imageNames[i]))[0]
 
     print("[INFO] loading network...")
     model = LeNet.build(width=32, height=32, depth=3, classes=96)
-    model.load_weights("testNet.h5")
+    model.load_weights(os.path.join(BASE_DIR, "testNet.h5"))
 
     opponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
     tempOpponentCards = ['MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard', 'MysteryCard']
@@ -133,7 +140,7 @@ def liveModelPredicts1():
         if (time.time()-startTime > 1):
 
             im = ImageGrab.grab()
-            im.save("testCNN.png")
+            im.save(os.path.join(BASE_DIR, "testCNN.png"))
             loadTestingImages1()
 
             for i in range(8):
@@ -141,7 +148,7 @@ def liveModelPredicts1():
                 if (opponentCards[i] != "MysteryCard"):
                     continue
 
-                img = cv2.imread("testData/output" + str(i+1) + ".png")
+                img = cv2.imread(os.path.join(BASE_DIR, "testData", f"output{i+1}.png"))
                 img = cv2.resize(img, (32, 32))
                 img = img.astype("float")/255.0
                 img = img_to_array(img)

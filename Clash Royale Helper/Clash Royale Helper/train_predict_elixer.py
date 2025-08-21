@@ -33,6 +33,10 @@ from load_train_test_2 import (
     labelTrainingData2,
 )
 
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+
 def trainModel2():
     EPOCHS = 150
     INIT_LR = 1e-3
@@ -62,7 +66,7 @@ def trainModel2():
                   epochs=EPOCHS, verbose=1)
 
     print("[INFO] serializing network...")
-    model.save_weights("testNet2.h5")
+    model.save_weights(os.path.join(BASE_DIR, "testNet2.h5"))
 
 def modelPredicts2():
     """Run inference on the eight cropped elixir/card slots in ``testData2``."""
@@ -70,10 +74,10 @@ def modelPredicts2():
 
     print("[INFO] loading network...")
     model = LeNet.build(width=28, height=28, depth=3, classes=2)
-    model.load_weights("testNet2.h5")
+    model.load_weights(os.path.join(BASE_DIR, "testNet2.h5"))
 
     for i in range(8):
-        img = cv2.imread(f"testData2/output{i+1}.png")
+        img = cv2.imread(os.path.join(BASE_DIR, "testData2", f"output{i+1}.png"))
         orig = img.copy()
 
         img = cv2.resize(img, (28, 28))
@@ -104,7 +108,7 @@ def liveModelPredicts2():
 
     print("[INFO] loading network...")
     model = LeNet.build(width=28, height=28, depth=3, classes=2)
-    model.load_weights("testNet2.h5")
+    model.load_weights(os.path.join(BASE_DIR, "testNet2.h5"))
 
     opponentHand = ['Card 1', 'Card 2', 'Card 3', 'Card 4', 'Card 5', 'Card 6', 'Card 7', 'Card 8']
 
@@ -118,11 +122,11 @@ def liveModelPredicts2():
         if (time.time()-startTime > 1):
 
             im = ImageGrab.grab()
-            im.save("testCNN.png")
+            im.save(os.path.join(BASE_DIR, "testCNN.png"))
             loadTestingImages2()
 
             for i in range(8):
-                img = cv2.imread("testData2/output" + str(i+1) + ".png")
+                img = cv2.imread(os.path.join(BASE_DIR, "testData2", f"output{i+1}.png"))
                 img = cv2.resize(img, (28, 28))
                 img = img.astype("float")/255.0
                 img = img_to_array(img)
