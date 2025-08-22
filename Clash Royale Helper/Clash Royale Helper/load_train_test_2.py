@@ -2,9 +2,7 @@ import numpy as np
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 
 from random import randint
@@ -23,9 +21,12 @@ from shutil import copyfile
 import os
 from random import randint
 
+BASE_DIR = os.path.dirname(__file__)
+
 def generateTrainingImages2():
 
-    currentNumOfData = len(sorted(list(paths.list_images("generatedData/"))))
+    gen_dir = os.path.join(BASE_DIR, "generatedData")
+    currentNumOfData = len(sorted(list(paths.list_images(gen_dir))))
 
     print("[INFO] Type anything and press enter to begin...")
     input()
@@ -40,15 +41,17 @@ def generateTrainingImages2():
             print("--------Captured Data--------")
 
             im = ImageGrab.grab()
-            im.save("generatedData/input" + str(i+1+currentNumOfData) + ".png")
+            im.save(os.path.join(gen_dir, f"input{str(i+1+currentNumOfData)}.png"))
             i += 1
 
             startTime = time.time()
 
 def labelTrainingData2():
 
-    imagePaths = sorted(list(paths.list_images("generatedData/")))
-    currentNumOfLabeledData = len(sorted(list(paths.list_images("trainData2/"))))
+    gen_dir = os.path.join(BASE_DIR, "generatedData")
+    imagePaths = sorted(list(paths.list_images(gen_dir)))
+    train_dir2 = os.path.join(BASE_DIR, "trainData2")
+    currentNumOfLabeledData = len(sorted(list(paths.list_images(train_dir2))))
 
     root = tkinter.Tk()
     myFrame = tkinter.LabelFrame(root, text="Unlabeled Data", labelanchor="n")
@@ -58,7 +61,7 @@ def labelTrainingData2():
 
     for i in range(len(imagePaths)):
         img = Image.open(imagePaths[i])
-        img.thumbnail((1500, 1500), Image.ANTIALIAS)
+        img.thumbnail((1500, 1500), Image.LANCZOS)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame, image = img)
         panel.image = img
@@ -68,14 +71,15 @@ def labelTrainingData2():
         label = input()
 
         if (label != 'e'):
-            copyfile(imagePaths[i], "trainData2/"+label+"input"+str(labeledCount+currentNumOfLabeledData)+".png")
+            copyfile(imagePaths[i], os.path.join(train_dir2, label + "input" + str(labeledCount+currentNumOfLabeledData) + ".png"))
             labeledCount += 1
 
         os.remove(imagePaths[i])
 
 def loadTrainingImages2():
 
-    imagePaths = sorted(list(paths.list_images("trainData2/")))
+    train_dir2 = os.path.join(BASE_DIR, "trainData2")
+    imagePaths = sorted(list(paths.list_images(train_dir2)))
     x_train = np.zeros((len(imagePaths)*2, 28, 28, 3))
 
     j = 0
@@ -90,7 +94,7 @@ def loadTrainingImages2():
 
         arr = arr[58:88, 702:1215]
 
-        card = int(imagePaths[i][imagePaths[i].find('/')+1])
+        card = int(os.path.basename(imagePaths[i])[0])
 
         if (card == 0):
             arr = arr[0:30, 50:104]
@@ -130,7 +134,7 @@ def loadTrainingImages2():
 
         arr = arr[58:88, 702:1215]
 
-        card = int(imagePaths[i][imagePaths[i].find('/')+1])
+        card = int(os.path.basename(imagePaths[i])[0])
         nonPlayedCards = np.arange(8)
         nonPlayedCards = nonPlayedCards.tolist()
         nonPlayedCards.remove(card)
@@ -177,25 +181,40 @@ def loadTrainingImages2():
     return x_train, y_train
 
 def loadTestingImages2():
+    """Split ``testCNN.png`` into eight 28×28 elixir/card slots.
 
-    img = cv2.imread("testCNN.png")
-    arr = img_to_array(img)
-    cv2.imwrite("croppped.png", arr[88:118, 702:1215])
+    Coordinates are scaled relative to a 1920×1080 reference resolution so
+    the helper works on different screen sizes. Raises ``FileNotFoundError``
+    if the screenshot does not exist.
+    """
 
-    arr = arr[88:118, 702:1215]
+    screenshot = os.path.join(BASE_DIR, "testCNN.png")
+    if not os.path.exists(screenshot):
+        raise FileNotFoundError(
+            "testCNN.png not found. Capture the screen before calling "
+            "loadTestingImages2()."
+        )
 
-    cv2.imwrite("testData2/output1.png", arr[0:30, 50:104])
+    img = cv2.imread(screenshot)
+    h, w = img.shape[:2]
+    sx, sy = w / 1920.0, h / 1080.0
 
-    cv2.imwrite("testData2/output2.png", arr[0:30, 109:163])
+    # Save row for debugging
+    row = img[int(88 * sy):int(118 * sy), int(702 * sx):int(1215 * sx)]
+    cv2.imwrite(os.path.join(BASE_DIR, "croppped.png"), row)
 
-    cv2.imwrite("testData2/output3.png", arr[0:30, 168:222])
+    slots = [
+        (88, 118, 752, 806),
+        (88, 118, 811, 865),
+        (88, 118, 870, 924),
+        (88, 118, 929, 983),
+        (88, 118, 988, 1042),
+        (88, 118, 1047, 1101),
+        (88, 118, 1106, 1160),
+        (88, 118, 1165, 1219),
+    ]
 
-    cv2.imwrite("testData2/output4.png", arr[0:30, 227:281])
-
-    cv2.imwrite("testData2/output5.png", arr[0:30, 286:340])
-
-    cv2.imwrite("testData2/output6.png", arr[0:30, 345:399])
-
-    cv2.imwrite("testData2/output7.png", arr[0:30, 404:459])
-
-    cv2.imwrite("testData2/output8.png", arr[0:30, 464:518])
+    test_dir2 = os.path.join(BASE_DIR, "testData2")
+    for i, (y1, y2, x1, x2) in enumerate(slots, start=1):
+        crop = img[int(y1 * sy):int(y2 * sy), int(x1 * sx):int(x2 * sx)]
+        cv2.imwrite(os.path.join(test_dir2, f"output{i}.png"), crop)
