@@ -164,7 +164,7 @@ def liveModelPredicts1():
                     opponentCards[i] = imageNames[label]
 
                     img = Image.open(imagePaths[label])
-                    img.thumbnail((128, 128), Image.ANTIALIAS)
+                    img.thumbnail((128, 128), Image.LANCZOS)
                     img = ImageTk.PhotoImage(img)
                     panel = tkinter.Label(myFrame, image = img, borderwidth=10)
                     panel.image = img

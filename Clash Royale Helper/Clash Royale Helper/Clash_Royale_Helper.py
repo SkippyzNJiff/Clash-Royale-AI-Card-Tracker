@@ -23,6 +23,12 @@ from load_train_test_2 import loadTestingImages2
 
 BASE_DIR = os.path.dirname(__file__)
 
+# Pillow >=10 deprecated ANTIALIAS. Use LANCZOS with a backward-compatible fallback.
+try:
+    RESAMPLE = Image.Resampling.LANCZOS
+except AttributeError:
+    RESAMPLE = getattr(Image, "LANCZOS", Image.ANTIALIAS)
+
 
 def liveBothModelPredicts():
 
@@ -74,7 +80,7 @@ def liveBothModelPredicts():
 
     for i in range(4):
         img = Image.open(os.path.join(train_dir, "MysteryCard.png"))
-        img.thumbnail((128, 128), Image.ANTIALIAS)
+        img.thumbnail((128, 128), RESAMPLE)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame, image = img, borderwidth=10, bg='green')
         panel.image = img
@@ -83,7 +89,7 @@ def liveBothModelPredicts():
 
     for i in range(4):
         img = Image.open(os.path.join(train_dir, "MysteryCard.png"))
-        img.thumbnail((128, 128), Image.ANTIALIAS)
+        img.thumbnail((128, 128), RESAMPLE)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame2, image = img, borderwidth=10, bg='orange')
         panel.image = img
@@ -147,7 +153,7 @@ def liveBothModelPredicts():
                         continuousClassificationCount[i] += 1
 
                     #img = Image.open(imagePaths[label])
-                    #img.thumbnail((128, 128), Image.ANTIALIAS)
+                    #img.thumbnail((128, 128), RESAMPLE)
                     #img = ImageTk.PhotoImage(img)
                     #panel = tkinter.Label(myFrame3, image = img, borderwidth=10)
                     #panel.image = img
@@ -215,7 +221,7 @@ def liveBothModelPredicts():
 
             for i in range(4):
                 img = Image.open(os.path.join(train_dir, opponentHand[i] + ".png"))
-                img.thumbnail((128, 128), Image.ANTIALIAS)
+                img.thumbnail((128, 128), RESAMPLE)
                 img = ImageTk.PhotoImage(img)
                 panel = tkinter.Label(myFrame, image = img, borderwidth=10, bg='green')
                 panel.image = img
@@ -224,7 +230,7 @@ def liveBothModelPredicts():
 
             for i in range(4):
                 img = Image.open(os.path.join(train_dir, opponentHand[i+4] + ".png"))
-                img.thumbnail((128, 128), Image.ANTIALIAS)
+                img.thumbnail((128, 128), RESAMPLE)
                 img = ImageTk.PhotoImage(img)
                 panel = tkinter.Label(myFrame2, image = img, borderwidth=10, bg='orange')
                 panel.image = img
@@ -283,7 +289,7 @@ def testingGUI():
     for r in range(1):
         for c in range(4):
             img = Image.open(os.path.join(train_dir, "GoblinHutCard.png"))
-            img.thumbnail((128, 128), Image.ANTIALIAS)
+            img.thumbnail((128, 128), RESAMPLE)
             img = ImageTk.PhotoImage(img)
             panel = tkinter.Label(myFrame, image = img, borderwidth=10)
             panel.image = img
@@ -295,7 +301,7 @@ def testingGUI():
     while(True):
         if(time.time() - st > 1):
             img = Image.open(os.path.join(train_dir, "TheLogCard.png"))
-            img.thumbnail((128, 128), Image.ANTIALIAS)
+            img.thumbnail((128, 128), RESAMPLE)
             img = ImageTk.PhotoImage(img)
             panel = tkinter.Label(myFrame, image = img, borderwidth=10)
             panel.image = img

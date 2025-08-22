@@ -61,7 +61,7 @@ def labelTrainingData2():
 
     for i in range(len(imagePaths)):
         img = Image.open(imagePaths[i])
-        img.thumbnail((1500, 1500), Image.ANTIALIAS)
+        img.thumbnail((1500, 1500), Image.LANCZOS)
         img = ImageTk.PhotoImage(img)
         panel = tkinter.Label(myFrame, image = img)
         panel.image = img
