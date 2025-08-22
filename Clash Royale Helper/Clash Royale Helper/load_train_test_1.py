@@ -1,51 +1,64 @@
+import os
 import numpy as np
 
 # Setting up data
 import cv2
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import img_to_array
 from imutils import paths
 
+BASE_DIR = os.path.dirname(__file__)
+
+
 def loadTrainingImages1():
-    x_train = np.zeros((96, 32, 32, 3))
+    """Load card training images from ``trainData`` folder."""
+    imagePaths = sorted(list(paths.list_images(os.path.join(BASE_DIR, "trainData"))))
+    x_train = np.zeros((len(imagePaths), 32, 32, 3))
 
-    imagePaths = sorted(list(paths.list_images("trainData/")))
-
-    for i in range(len(imagePaths)):
-
-        img = cv2.imread(imagePaths[i])
+    for i, path in enumerate(imagePaths):
+        img = cv2.imread(path)
         img = cv2.resize(img, (32, 32))
-        img = img_to_array(img)
-        x_train[i] = img
+        x_train[i] = img_to_array(img)
 
-    y_train = np.zeros(len(x_train))
-
-    for i in range(len(y_train)):
-        y_train[i] = i
-
+    y_train = np.arange(len(imagePaths))
     return x_train, y_train
 
+
 def loadTestingImages1():
+    """Split ``testCNN.png`` into eight 32×32 card crops.
 
-    img = cv2.imread("testCNN.png")
-    arr = img_to_array(img)
-    cv2.imwrite("croppped.png", arr[58:180, 702:1230])
+    Coordinates are scaled relative to a 1920×1080 reference resolution so
+    the helper works on different screen sizes. Raises ``FileNotFoundError``
+    if the screenshot does not exist.
+    """
 
-    arr = arr[58:180, 702:1230]
+    screenshot = os.path.join(BASE_DIR, "testCNN.png")
+    if not os.path.exists(screenshot):
+        raise FileNotFoundError(
+            "testCNN.png not found. Capture the screen before calling "
+            "loadTestingImages1()."
+        )
 
-    cv2.imwrite("testData/output1.png", arr[57:145, 50:104])
+    img = cv2.imread(screenshot)
+    h, w = img.shape[:2]
+    sx, sy = w / 1920.0, h / 1080.0
 
-    cv2.imwrite("testData/output2.png", arr[57:145, 109:163])
+    # Save the entire row of card slots for debugging
+    row = img[int(58 * sy):int(180 * sy), int(702 * sx):int(1230 * sx)]
+    cv2.imwrite(os.path.join(BASE_DIR, "croppped.png"), row)
 
-    cv2.imwrite("testData/output3.png", arr[57:145, 168:222])
+    # Absolute coordinates of each card slot on a 1920×1080 frame
+    slots = [
+        (115, 203, 752, 806),
+        (115, 203, 811, 865),
+        (115, 203, 870, 924),
+        (115, 203, 929, 983),
+        (115, 203, 988, 1042),
+        (115, 203, 1047, 1101),
+        (115, 203, 1106, 1160),
+        (115, 203, 1165, 1219),
+    ]
 
-    cv2.imwrite("testData/output4.png", arr[57:145, 227:281])
-
-    cv2.imwrite("testData/output5.png", arr[57:145, 286:340])
-
-    cv2.imwrite("testData/output6.png", arr[57:145, 345:399])
-
-    cv2.imwrite("testData/output7.png", arr[57:145, 404:458])
-
-    cv2.imwrite("testData/output8.png", arr[57:145, 463:517])
+    test_dir = os.path.join(BASE_DIR, "testData")
+    for i, (y1, y2, x1, x2) in enumerate(slots, start=1):
+        crop = img[int(y1 * sy):int(y2 * sy), int(x1 * sx):int(x2 * sx)]
+        cv2.imwrite(os.path.join(test_dir, f"output{i}.png"), crop)
